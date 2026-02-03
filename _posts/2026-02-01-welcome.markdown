@@ -1,8 +1,0 @@
----
-layout: post
-title:  "Welcome to RiSE MSR Blog"
-date:   2026-02-01 01:44:00 +0000
-author: RiSE MSR Team
----
-
-Welcome to the RiSE MSR blog!
