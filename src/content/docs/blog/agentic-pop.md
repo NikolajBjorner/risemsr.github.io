@@ -460,8 +460,9 @@ proof hints.
 
 F\* supports a variety of programming paradigms, not just functional
 programming. For example, one can write imperative programs with shared-memory
-concurrency and prove them correct in Pulse, an embedded language in F\*. We'll
-see more of Pulse shortly.
+concurrency and prove them correct in Pulse, an embedded language in F\*. You
+can learn more about Pulse
+[here](https://fstar-lang.org/tutorial/book/pulse/pulse.html#pulse-proof-oriented-programming-in-concurrent-separation-logic).
 
 Programming in this way requires quite a bit of expertise, and it can be quite
 laborious to produce a large verified program, but it offers very strong
