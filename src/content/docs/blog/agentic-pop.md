@@ -86,6 +86,10 @@ invariant. You might find this example useful too, if only to get a feeling of
 what Pulse code looks like:
 
 ```pulse
+// Pure specification: what it means for an index to be the max position
+let is_max_position (s: Seq.seq int) (idx: nat{idx < Seq.length s}) : prop =
+  forall (i: nat). i < Seq.length s ==> Seq.index s idx >= Seq.index s i
+
 fn max_position (a: array int) (len: SZ.t)
 requires a |-> Frac 'p 's
 requires pure (SZ.v len == Seq.length 's /\ Seq.length 's > 0)
@@ -119,13 +123,13 @@ ensures pure (SZ.v result < Seq.length 's /\ is_max_position 's (SZ.v result))
 
 The function `max_position` takes a mutable array `a` of integers and its length
 `len`, along with some ghost parameters for permissions and the abstract
-sequence `s` that `a` represents. The preconditions state that `a` points to the
-sequence `s` with some fractional permission `p`, and that `len` matches the
-length of `s` and is greater than 0. The function returns the index of the
-maximum element in `a`, ensuring that the array's permissions are preserved and
-that the returned index is valid and corresponds to the maximum element in `s`,
-where `is_max_position` is a pure mathematical function defined as a
-specification in F\*.
+sequence `s` that represents the contents of array `a`. The preconditions state
+that `a` points to `s` with some fractional permission `p`, and that `len`
+matches the length of `s` and is greater than 0. The function returns the index
+of the maximum element in `a`, ensuring that the array's permissions are
+preserved, that the returned index is valid and corresponds to the maximum
+element in `s`, where `is_max_position` is a pure mathematical function defined
+as a specification in F\*.
 
 Some of the complexity of the code comes from manipulating array positions,
 which like in C are of type `SZ.t`, the type of machine-sized integers in Pulse.
@@ -146,7 +150,7 @@ result is available here:
 Of course, bubble sort is not necessarily the best sorting algorithm. I picked
 it because, as far as I know, there is no existing verified implementaton of
 bubble sort in F\* or Pulse, so it was a good first test. In contrast, there are
-several implementations of quicksort, insertions sort, mergesort, etc.
+several implementations of quicksort, insertion sort, mergesort, etc.
 
 ## Plan mode: Extend the Pulse Library
 
@@ -215,10 +219,10 @@ a useful addition, i.e., a lock to protect a resource that allows multiple
 readers to acquire the lock but only one writer.
 
 Proving this data structure in Pulse, as in other separation logics, requires
-the use of atomic operations, fractional permissions, ghost state, and
-invariants, all of which are fairly advanced features of Pulse. The agent
-produced a nice specification of a reader-writer lock, but struggled to get the
-implementation correct. 
+the use of atomic operations, fractional permissions, ghost state, invariants,
+and step-indexing with later credits, all of which are fairly advanced features
+of Pulse. The agent produced a nice specification of a reader-writer lock, but
+struggled to get the implementation correct. 
 
 A first attempt tried to build a reader-writer lock on top of a simple mutex,
 which does not work. I tried to guide it towards the solution I wanted in
