@@ -4,7 +4,8 @@ description: Exploring AI-assisted proof-oriented programming with Copilot CLI a
 author: Nik Swamy
 ---
 
-* Author: Nik Swamy
+* Author: Nik Swamy, with thanks to Lef Ionnadis, Matthai Philipose, Alex
+  Lavaee, Jana Kulkarni, and many others
 
 Can AI assist in the buliding programs with formal proofs of correctness? This
 past week, my experience using [Copilot
