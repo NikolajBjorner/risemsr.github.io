@@ -7,15 +7,14 @@ author: Nik Swamy
 * Author: Nik Swamy, with thanks to Lef Ioannidis, Matthai Philipose, Alex
   Lavaee, Jana Kulkarni, and many others
  
-Can AI assist in building programs with formal proofs of correctness? We've been
-pursuing this research direction for a few years now
+Can AI assist in building programs with formal proofs of correctness? Researchers in
+MSR and else have been working on this research goal for a few years
 ([1](https://arxiv.org/abs/2405.01787), [2](https://arxiv.org/abs/2404.10362),
 [3](https://sites.google.com/view/autoverus), ...), but my recent experience
-using [Copilot CLI](https://github.com/features/copilot/cli) to build proofs of
-programs in [F\*](https://fstar-lang.org) and
+using [Copilot CLI](https://github.com/features/copilot/cli) to develop programs with proofs in [F\*](https://fstar-lang.org) and
 [Pulse](https://fstar-lang.org/tutorial/book/pulse/pulse.html) has been eye
 opening. We might be on the verge of Agentic PoP---AI-assisted proof-oriented
-programming, where expert humans focus on specifications, high-level design, and
+programming, where human experts focus on specifications, high-level design, and
 a few key invariants, and AI agents take care of the mechanics of constructing
 formal proofs. 
 
@@ -29,11 +28,11 @@ verified, imperative, concurrent libraries in Pulse, starting with simple things
 like a bubble sort on arrays and a ring buffer, but also a priority queue, an
 iterator library for linked lists, a hashtable with chained buckets, and even
 concurrency control primitives like a reader-writer lock and a counting
-semaphore. This is a total of about 10,000 lines of verified code and proof,
+semaphore. This is a total of about 10,000 lines of verified code and proofs,
 something that would have probably taken me some weeks of focused work to
 produce. The resulting code has been committed to the Pulse repository in a
-series of pull requests---backed by formal proof, this type of code is much
-easier to review and commit.
+series of pull requests---backed by a machine-checked proof, this type of code is much
+easier to review and merge.
 
 This is the first in a series of posts on this blog exploring the use of AI to
 construct provably correct programs. Many of us in RiSE are exploring this
@@ -140,7 +139,7 @@ invariant.
 ### A Small Example in Pulse, for the Model & You
 
 Here's the example I added to the agent description to give the model some
-reference code using an idiomatic while loop in Pulse. You might find this
+reference code using an idiomatic while loop in Pulse. The reader might find this
 example useful too, if only to get a feeling of what Pulse code looks like:
 
 ```pulse
@@ -179,17 +178,17 @@ ensures pure (SZ.v result < Seq.length 's /\ is_max_position 's (SZ.v result))
   }
 ```
 
-The function `max_position` takes a mutable array `a` of integers and its length
+The function `max_position` takes a mutable array of integers `a` and its length
 `len`, along with some ghost parameters for permissions and the abstract
 sequence `s` that represents the contents of array `a`. The preconditions state
-that `a` points to `s` with some fractional permission `p`, and that `len`
-matches the length of `s` and is greater than 0. The function returns the index
-of the maximum element in `a`, ensuring that the array's permissions are
-preserved, that the returned index is valid and corresponds to the maximum
-element in `s`, where `is_max_position` is a pure mathematical function defined
-as a specification in F\*.
+that `a` points to `s` with some fractional permission `p`---only requiring `p` 
+"parts of ownership" over `s`---and that `len` matches the length of `s` and 
+is greater than 0. The function returns the index of the maximum element in `a`,
+ensuring that the array's permissions are preserved, that the returned index is
+valid and corresponds to the maximum element in `s`, where `is_max_position`
+is a pure mathematical function defined as a specification in F\*.
 
-Some of the complexity of the code comes from manipulating array positions,
+Some of the complexity of the code comes from manipulating array indices,
 which like in C are of type `SZ.t`, the type of machine-sized integers in Pulse.
 One has to decorate loops with invariants to convince the checker that the code
 is correct.
@@ -201,8 +200,8 @@ integers and prove it correct. To my surprise, it produced a correct
 specification and implementation of bubble sort, around 200 lines of code, with
 the usual doubly nested loop that one expects in bubble sort. In doing so, the
 agent repeatedly invoked the Pulse verifier, fixed errors, and refined the proof
-until it was correct. The entire process took around 10 minutes. Once it was
-done, I asked it to generalize the code to use a typeclass for elements with a
+until it was correct. The entire process took around 10 minutes and was entirely automated.
+Once it was done, I asked the agent to generalize the code to use a typeclass for elements with a
 total order, rather than just integers, and this too it did very quickly. The
 full result is available online,
 ([PulseExample.BubbleSort](https://github.com/FStarLang/pulse/blob/5e02af0713aed5d96eeb1b0c62c33a13e0089d5f/share/pulse/examples/PulseExample.BubbleSort.fst)).
@@ -273,8 +272,8 @@ succeeded, producing a nice iterator library that allowed one to traverse linked
 lists, with full specifications and proofs. Interestingly, the proof of
 iterators requires using separations logic's "magic wand" operator, which in
 Pulse is called a "trade". The model had no trouble with this, after looking
-through the library to find other uses of trades.
-([PR](https://github.com/FStarLang/pulse/pull/530/))
+through the library to find other uses of trades
+([PR](https://github.com/FStarLang/pulse/pull/530/)).
 
 The priority queue and hashtable are both larger tasks, and the agent appeared
 to simply run out of time, leaving behind an explanation that the task was too
@@ -303,9 +302,7 @@ and step-indexing with later credits, all of which are fairly advanced features
 of Pulse. The agent produced a nice specification of a reader-writer lock, but
 struggled to get the implementation correct. 
 
-A first attempt tried to build a reader-writer lock on top of a simple mutex,
-which does not work. I tried to guide it towards the solution I wanted in
-natural language, e.g.,
+A first attempt tried to build a reader-writer lock on top of a simple mutex---this does not work as it does not distinguish between read and write access. I tried to guide it towards the solution I wanted in natural language, e.g.,
 
 > The interface looks good, but the implementation has admits and is not correct. You need to implement a new kind of lock from scratch, using atomic operations on a machine word, where the value of the word indicates the number of readers that have currently acquired the lock, and with a designated value to indicate that a writer has acquired it, e.g., MAX_UINT32. You also need some ghost state to do the permission accounting, so that you can maintain an invariant that when the lock has not been acquired, you have full permission to the predicate, and otherwise you have a share that is 1 - the sum of the fractions that have been handed out to all the readers
 
@@ -322,7 +319,7 @@ realized later.
 
 > Actually, my answer to your clarifying questions was wrong. The ownership of the ghost map does need to be split so that each reader has #0.5 knowledge of their index id in the map, while the lock retains the other half permission over that point in the map. You observed this need to split maps in this manner in your reasoning trace. Take a look at Pulse.Lib.GhostFractionalTable, which lets you define a ghost table and then share out ownership of individual entries in the table. You might also want to take a look at the implementation of Pulse.Lib.ConditionVar, which also uses a similar table (though it is an SLPropTable built on top of GhostFractionalTable), and notice how its invariant relates the content of the table to a sequence. You can use a similar style, but in this case you are summing up permissions rather than taking the separating conjunction of all predicates in the table
 
-This too didn't fully work, but it was getting closer to a solution. Finally, I switched
+This too did not fully work, but it was getting closer to a solution. Finally, I switched
 tack and decided that I would write down what I thought was the correct invariant
 in formal F\* code:
 
@@ -411,7 +408,7 @@ strictly less than maximum bound, meaning an increment of the counter is safe.
 That was enough for it to refactor the proof, removing the check and completing
 the proof correctly.
 
-Again, this level of interaction with a proof assistant is unheard of. Too
+Again, this level of interaction with a proof assistant was unheard of. Too
 often, mechanized proof assistants feel like proof curmudgeons, requiring to
 convince the machine of every step. Being able to express intuition and
 high-level intent and for the proof assistant to complete the work is a dream. 
@@ -443,6 +440,9 @@ All of which is to say that formal specifications and proofs help to *reduce*
 what a human needs to audit about the code, it does not eliminate it completely.
 
 ### Executable Programs and Testing
+<lef: this is too diplomatic and takes away from the excitement of the rest of the post.
+I agree with Knuth, but he was doing proofs by hand! There is a time and place to be diplomatic with
+our testing friends, and this post is not it!>
 
 Testing is an important part of the story. As Donald Knuth famously said,
 "Beware of bugs in the above code; I have only proved it correct, not tried it."
