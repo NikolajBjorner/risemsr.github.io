@@ -1,7 +1,10 @@
 ---
 title: Agentic Proof-Oriented Programming
 description: Exploring AI-assisted proof-oriented programming with Copilot CLI and F*.
+author: Nik Swamy
 ---
+
+* Author: Nik Swamy
 
 Can AI assist in the buliding programs with formal proofs of correctness? This
 past week, my experience using [Copilot
@@ -38,6 +41,7 @@ find what the limits are.
 I'll dive right in and provide some context as I go, but if you're not familar
 with proof-oriented programming and F\*, you might want to first read the brief
 background section at the end of this post.
+
 
 ## Setup
 
