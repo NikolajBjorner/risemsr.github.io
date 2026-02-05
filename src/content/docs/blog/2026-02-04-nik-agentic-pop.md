@@ -381,10 +381,7 @@ In other words, these agents are not an outright replacement for human
 expertise. Instead, they seem to accelerate expert humans. I would imagine that
 they also reduce the barrier to entry for less experienced users, e.g., one
 might get quite far just by being able to read and critique formal
-specifications, rather than needing to write such specifications and proofs. Put
-a different way, riffing on [Cory Doctorow's thought-provoking
-article](https://www.theguardian.com/us-news/ng-interactive/2026/jan/18/tech-ai-bubble-burst-reverse-centaur), 
-I still feel distinctly like a centaur.
+specifications, rather than needing to write such specifications and proofs.
 
 ## Learning from Examples: Counting Semaphore
 
