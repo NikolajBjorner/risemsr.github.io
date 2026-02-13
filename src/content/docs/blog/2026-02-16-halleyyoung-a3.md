@@ -22,7 +22,7 @@ and import mathematical libraries for reasoning about PyTorch code. **NSB: revis
 The a3-python system is now [available](https://pypi.org/project/a3-python)
 for you to give a spin.
 
-# Querying for confluences
+## Querying for confluences
 
 We did not start with _let's make a Python verifier_. Instead our starting point was a prompt aimed at uncovering confluences 
 between lines of thought that have been unlikely to be combined so far. Our prompt involving Voevodsky and the co-author of this blog
@@ -37,8 +37,27 @@ The earliest phase produced a long, ambitious manuscript on quantitative model c
 In other words, make verification feel less like a courtroom verdict and more like geometry.
 The paper-level ideas were ambitious enough to be interesting and dangerous enough to be wrong in many ways once code entered the room. That tension is the whole story.
 
+## An Initial System
 
-# -------------- ORIGINAL VERSION ------------
+__Describe the initial system__
+
+## The Compute Aided Verification kitchen sink
+
+__Describe the kitchen sink approach__
+
+While a novel looking foundation and AI models ability to create end-to-end systems based on one approach 
+has its own appeal we are not
+
+## Library Specialization
+
+__Describe pytorch axiomatization and provide an example using a3-python__
+
+
+## Iterating for Quality
+
+__Describe what was the process for driving quality of a3-python and what is in store for AI assisted programming__
+
+# ------- ORIGINAL VERSION ------
 
 
 # The Slop Feedback Loop: How We Used AI to Filter AI Bugs
