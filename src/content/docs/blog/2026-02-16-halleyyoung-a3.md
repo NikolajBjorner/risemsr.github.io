@@ -22,20 +22,11 @@ and import mathematical libraries for reasoning about PyTorch code. **NSB: revis
 The a3-python system is now [available](https://pypi.org/project/a3-python)
 for you to give a spin.
 
+# Querying for confluences
 
-# The Slop Feedback Loop: How We Used AI to Filter AI Bugs
-
-**Deliverable first:** `pip install a3-python` gives you a package that automatically discovers bug candidates, filters out as many as possible with static analysis, and then asks an LLM to make the final call only on a much smaller uncertain set.
-
-That is the ending. Now for the weird beginning.
-
-## One ridiculous origin story
-
-This did not start as "let's make a Python CLI."
-
-It started with an almost unserious challenge: can an AI generate a genuinely new verification theory at research-paper scale, then survive contact with implementation?
-
-The original framing was delightfully specific: ask for Voevodsky-level mathematical ambition aimed at something a Z3 builder like Nikolaj Bjørner would still find operationally useful.
+We did not start with _let's make a Python verifier_. Instead our starting point was a prompt aimed at uncovering confluences 
+between lines of thought that have been unlikely to be combined so far. Our prompt involving Voevodsky and the co-author of this blog
+is on purpose set up to trigger modern AI's power to retrieve and extrapolate. 
 
 The earliest phase produced a long, ambitious manuscript on quantitative model checking. The central move was elegant:
 
@@ -44,10 +35,20 @@ The earliest phase produced a long, ambitious manuscript on quantitative model c
 - use that distance as a semantic object you can optimize.
 
 In other words, make verification feel less like a courtroom verdict and more like geometry.
-
-![Presentation cover](../../../assets/slop-feedback-loop/title-cover.png)
-
 The paper-level ideas were ambitious enough to be interesting and dangerous enough to be wrong in many ways once code entered the room. That tension is the whole story.
+
+
+# -------------- ORIGINAL VERSION ------------
+
+
+# The Slop Feedback Loop: How We Used AI to Filter AI Bugs
+
+**Deliverable first:** `pip install a3-python` gives you a package that automatically discovers bug candidates, filters out as many as possible with static analysis, and then asks an LLM to make the final call only on a much smaller uncertain set.
+
+That is the ending. Now for the weird beginning.
+
+
+
 
 ## Episode I: the "distance to safety" era
 
