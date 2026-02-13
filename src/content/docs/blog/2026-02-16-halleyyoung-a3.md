@@ -7,6 +7,20 @@ author: Halley Young
 * Author: Halley Young, Nikolaj Bj&oslash;rner
 
 
+What if you asked your favorite AI agent:
+
+>  produce mathematics at the level of Vladimir Voevodsky, Fields Medal-winning, 
+> foundation-shaking work but directed toward something the legendary Nikolaj Bj&oslash;rner 
+> (co-creator of Z3) could actually use?
+
+Our journey creating the __a3__ framework, a system for generating Advanced Automated Analysis engines and so far extracted
+static verifiers for Rust and Python. In the process of creating a3-python we used AI to (re)discover a
+foundation based on Hilbert's Stellensatz theorems for program analysis, integrate a top dozen advances in symbolic model checking, 
+and import mathematical libraries for reasoning about PyTorch code. **NSB: revisit to make sure the right elements are summarized**
+The a3-python system is now [available](https://pypi.org/project/a3-python)
+for you to give a spin.
+
+
 # The Slop Feedback Loop: How We Used AI to Filter AI Bugs
 
 **Deliverable first:** `pip install a3-python` gives you a package that automatically discovers bug candidates, filters out as many as possible with static analysis, and then asks an LLM to make the final call only on a much smaller uncertain set.
