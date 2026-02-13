@@ -1,3 +1,12 @@
+---
+title: How to train your symbolic program analysis engine
+description: Development of a symbolic program analysis engine from prompts to functioning system
+author: Halley Young
+---
+
+* Author: Halley Young, Nikolaj Bj&oslash;rner
+
+
 # The Slop Feedback Loop: How We Used AI to Filter AI Bugs
 
 **Deliverable first:** `pip install a3-python` gives you a package that automatically discovers bug candidates, filters out as many as possible with static analysis, and then asks an LLM to make the final call only on a much smaller uncertain set.
@@ -20,7 +29,9 @@ The earliest phase produced a long, ambitious manuscript on quantitative model c
 
 In other words, make verification feel less like a courtroom verdict and more like geometry.
 
+<!---
 ![Presentation cover](assets/presentation-pngs/slide-01.png)
+--->
 
 The paper-level ideas were ambitious enough to be interesting and dangerous enough to be wrong in many ways once code entered the room. That tension is the whole story.
 
@@ -62,9 +73,11 @@ You can read it as: construct a mathematical fence `B(x)` so that
 
 That sounds abstract until it gets wired into a concrete analysis stack.
 
+<!---
 ![Barrier intuition](assets/presentation-pngs/slide-08.png)
 
 ![System architecture overview](assets/presentation-pngs/slide-02.png)
+--->
 
 Once attached to symbolic execution, SMT feasibility checks, and refinement loops, barrier reasoning stops being decorative math and becomes a high-throughput false-positive filter.
 
@@ -143,7 +156,9 @@ This was the underappreciated step. Instead of forcing code to match a brittle t
 
 Then the loop restarted.
 
+<!---
 ![Analysis workflow](assets/presentation-pngs/slide-06.png)
+--->
 
 This is "fighting AI slop with AI slop" in practice: generate aggressively, then subject everything to adversarial execution.
 
