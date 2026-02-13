@@ -9,9 +9,11 @@ author: Halley Young
 
 What if you asked your favorite AI agent:
 
+
 >  produce mathematics at the level of Vladimir Voevodsky, Fields Medal-winning, 
 > foundation-shaking work but directed toward something the legendary Nikolaj Bj&oslash;rner 
 > (co-creator of Z3) could actually use?
+
 
 Our journey creating the __a3__ framework, a system for generating Advanced Automated Analysis engines and so far extracted
 static verifiers for Rust and Python. In the process of creating a3-python we used AI to (re)discover a
