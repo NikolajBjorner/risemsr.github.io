@@ -1,5 +1,5 @@
 ---
-title: How to train your symbolic program analysis engine
+title: How to train your symbolic program verifier
 description: Development of a symbolic program analysis engine from prompts to functioning system
 author: Halley Young
 ---
@@ -10,10 +10,10 @@ author: Halley Young
 What if you asked your favorite AI agent:
 
 
->  produce mathematics at the level of Vladimir Voevodsky, Fields Medal-winning, 
+
+> Produce mathematics at the level of Vladimir Voevodsky, Fields Medal-winning, 
 > foundation-shaking work but directed toward something the legendary Nikolaj Bj&oslash;rner 
 > (co-creator of Z3) could actually use?
-
 
 Our journey creating the __a3__ framework, a system for generating Advanced Automated Analysis engines and so far extracted
 static verifiers for Rust and Python. In the process of creating a3-python we used AI to (re)discover a
@@ -24,8 +24,11 @@ for you to give a spin.
 
 ## Querying for confluences
 
-We did not start with _let's make a Python verifier_. Instead our starting point was a prompt aimed at uncovering confluences 
-between lines of thought that have been unlikely to be combined so far. Our prompt involving Voevodsky and the co-author of this blog
+__NSB: we might need to invert the theory pitch to later to get to the usability sooner__
+
+We did not start with _let's make a Python verifier_. Instead our starting point
+was a prompt aimed at uncovering confluences between lines of thought that have
+been unlikely to be combined so far. Our prompt involving Voevodsky and the co-author of this blog
 is on purpose set up to trigger modern AI's power to retrieve and extrapolate. 
 
 The earliest phase produced a long, ambitious manuscript on quantitative model checking. The central move was elegant:
@@ -35,9 +38,47 @@ The earliest phase produced a long, ambitious manuscript on quantitative model c
 - use that distance as a semantic object you can optimize.
 
 In other words, make verification feel less like a courtroom verdict and more like geometry.
-The paper-level ideas were ambitious enough to be interesting and dangerous enough to be wrong in many ways once code entered the room. That tension is the whole story.
+The paper-level ideas were ambitious enough to be interesting and dangerous enough to be wrong
+in many ways once code entered the room.
+The approach was based on _metric semantics_: traces as distributions, properties as structured
+acceptance sets, distance to acceptance as a first-class quantity. _Fascinating_, but also provided
+instincts that survied the transition to working prototypes: Safety wasn't considered purely a Boolean, 0/1, property.
+Uncertainty has shape. Quantitative semantics was used to prioritize work, and distance to satisfiability guided repair.
+
+But put to the test, to solve real-world code bases, it was killing mountains of false positives and missed true bugs.
+
+In a second iteration we queried our model to shift from measurement to separation.
+Instead of asking only _how close is unsafe behavior?_,
+
+- what set is reachable,
+- what set is unsafe,
+- and can we synthesize a witness that keeps those sets disjoint?
+
+It is much closer to mainstream symbolic program verification techniques. The objective in automated symbolic
+program verification is to synthesize a barrier certificate `B(s)`, where `s` are state variables of a program, so that 
+
+- initial states `sInit` are on the safe side, they satisfy `B(sInit) >= 0`,
+- unsafe states are on the forbidden side, they satisfy `B(sBad) < 0`,
+- and transitions never cross the fence, every non-negative `B` state transitions to another non-negative `B` state.
+
+The idea can be illustrated visually:
+
+![Barrier intuition](../../../assets/slop-feedback-loop/barrier-theory.png)
+
+Our favorite LLM model __NSB: name names here? you used some mixture along the way?__ determined that barriers should be expressed using polynomials
+over real and integer numbers. It introduced us to an algebraic proof machinery based on Hilbert's Positivstellensats, sums of squares, semi-definite programming,
+and the works [3][4][5][6][7][18]. Considering that the z3 theorem prover supports both polynomial arithmetic but also domains that correspond directly
+to datatypes found in mainstream programming languages we were intrigued by the origins of this direction. While Claude __NSB: name model?__ appeared inclined
+to present results as its own inventions, we could send the 85 page document to copilot for a quiz on origins: The closest match was a method introduced
+20 years ago for cyber physical systems [PennSUPaper] and perhaps a thread of approaches used for synthesizing invariants from Farkas lemma [GulwaniVenkie].
+
+
+![System architecture overview](../../../assets/slop-feedback-loop/system-architecture-overview.png)
+
+Once attached to symbolic execution, SMT feasibility checks, and refinement loops, barrier reasoning stops being decorative math and becomes a high-throughput false-positive filter.
 
 ## An Initial System
+
 
 __Describe the initial system__
 
@@ -57,6 +98,10 @@ __Describe pytorch axiomatization and provide an example using a3-python__
 
 __Describe what was the process for driving quality of a3-python and what is in store for AI assisted programming__
 
+
+__NSB: symbolo-neural__: symbolic verifier which is deterministic, auditable, and eco-friendly; neural triaging to filter important bugs form noise and to explain bugs. The quadrant of symbolic, neural, neuro-symolic and symbol-neural.
+
+
 # ------- ORIGINAL VERSION ------
 
 
@@ -69,49 +114,11 @@ That is the ending. Now for the weird beginning.
 
 
 
-## Episode I: the "distance to safety" era
-
-The first era was all about metric semantics:
-
-- traces as distributions,
-- properties as structured acceptance sets,
-- distance to satisfaction as a first-class quantity.
-
-This gave three useful instincts that survived to production:
-
-1. Safety is not just a Boolean; uncertainty has shape.
-2. Quantitative semantics can prioritize work.
-3. If distance can be computed, repair can be guided.
-
-What did not survive unchanged was the fantasy that this alone solves industrial bug detection. In real codebases, most pain is not proving one deep theorem; it is killing mountains of false positives without missing true bugs.
-
-In hindsight, the arc is clear: a 74-page quantitative semantics manuscript came first, then a dense algebraic synthesis treatment of safety witnesses, and finally a Python-exact semantics draft that made those witness ideas executable in tooling.
-
-## Episode II: the "prove unreachable" era
-
-The second era shifted from measurement to separation.
-
-Instead of asking only "how close is unsafe behavior?", the system asked:
-
-- what set is reachable,
-- what set is unsafe,
-- and can we synthesize a witness that keeps those sets disjoint?
-
 That witness is the barrier-certificate idea.
 
 You can read it as: construct a mathematical fence `B(x)` so that
 
-- initial states are on the safe side,
-- unsafe states are on the forbidden side,
-- and transitions never cross the fence.
 
-That sounds abstract until it gets wired into a concrete analysis stack.
-
-![Barrier intuition](../../../assets/slop-feedback-loop/barrier-theory-visual-explanation.png)
-
-![System architecture overview](../../../assets/slop-feedback-loop/system-architecture-overview.png)
-
-Once attached to symbolic execution, SMT feasibility checks, and refinement loops, barrier reasoning stops being decorative math and becomes a high-throughput false-positive filter.
 
 ## Episode III: the Python reality era
 
@@ -128,7 +135,8 @@ That meant committing to execution details instead of hand-wavy semantics:
 
 This is where lots of elegant claims died. Good. They needed to.
 
-The theory was then rewritten to reflect executable reality: safety as reachability exclusion over an explicit transition system, with contracts for unknown calls and concolic checks as refinement evidence.
+The theory was then rewritten to reflect executable reality: safety as reachability
+exclusion over an explicit transition system, with contracts for unknown calls and concolic checks as refinement evidence.
 
 ## The actual engine: AI theorizing -> coding -> testing -> fixing code -> fixing theory
 
