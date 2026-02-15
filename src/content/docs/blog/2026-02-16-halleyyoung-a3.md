@@ -7,8 +7,9 @@ author: Halley Young
 * Author: Halley Young, Nikolaj Bj&oslash;rner
 
 
-What if you asked your favorite AI agent:
+![Dragon Training](../../../assets/slop-feedback-loop/cute-robot-dragon.jpg)
 
+What if you asked your favorite AI agent:
 
 
 > Produce mathematics at the level of Vladimir Voevodsky, Fields Medal-winning, 
@@ -25,7 +26,7 @@ for you to give a spin.
 ## A3-python
 
 Before we walk through the theory and pipeline, here is what a3 actually does on a real codebase.
-We ran `a3 scan` on five core files from [requests](https://github.com/psf/requests), the most downloaded Python package on PyPI (183 functions, ~5000 lines):
+We ran `a3 scan` on five core files from [requests](https://github.com/psf/requests), __NSB: need to point to a specific commit sha so this persists__ the most downloaded Python package on PyPI (183 functions, ~5000 lines):
 
 ```
 $ pip install a3-python
@@ -77,10 +78,14 @@ These are the kind of bugs that pass code review, pass tests, and then crash at 
 A3 is auto-generated and iterated: the analyzer was bootstrapped by asking AI to produce verification theory,
 then subjected to thousands of test iterations against real codebases.
 The theory was refined, the code was refined, and the surviving result is what ships.
+A3 identifies bugs across a set of pre-defined categories. If the code uses assertions it
+will attempt to establish that they hold on all code-paths, but general purpose verification is not the main use case for a3-python.
+
+![Bug taxonomy coverage](../../../assets/slop-feedback-loop/bug-taxonomy.png)
+
 
 ## Querying for confluences
 
-__NSB: we might need to invert the theory pitch to later to get to the usability sooner__
 
 We did not start with _let's make a Python verifier_. Instead our starting point
 was a prompt aimed at uncovering confluences between lines of thought that have
@@ -131,10 +136,8 @@ to present results as its own inventions, we could send the 85 page document to 
 
 ## From Math to Code
 
-__NSB: Describe the initial system__
 
-One thing is creating documents with suave looking scientific definitions and propositions, another is synthesizing code.
-Thankfully, the documents provide a great compass for agents to plan implementations. We still need an implementation plan.
+The eloquently looking mathematical documents provide a great compass for agents to plan implementations. We still need an implementation plan.
 We asked Copilot to synthesize a script to call Copilot in a loop, bootstrapping an implementation 
 
 
@@ -143,14 +146,7 @@ We asked Copilot to synthesize a script to call Copilot in a loop, bootstrapping
 > This should consist of a .py python file which enacts this workflow.
 `
 
-
-![System architecture overview](../../../assets/slop-feedback-loop/system-architecture-overview.png)
-
-Once attached to symbolic execution, SMT feasibility checks, and refinement loops, barrier reasoning stops being decorative math and becomes a high-throughput false-positive filter.
-
-The third era was the hardest: making the theory survive Python exactly enough to matter.
-
-That meant committing to execution details instead of hand-wavy semantics:
+The agentic loop now focused on committing to execution details:
 
 - bytecode-level control flow,
 - normal and exceptional edges,
@@ -159,10 +155,10 @@ That meant committing to execution details instead of hand-wavy semantics:
 - unknown library behavior,
 - and explicit unsafe predicates for real bug classes.
 
-This is where lots of elegant claims died. Good. They needed to.
+At a high-level the generated code implemented an architecture integrating symbolic execution and concolic oracles.
+More about oracles later.
 
-The theory was then rewritten to reflect executable reality: safety as reachability
-exclusion over an explicit transition system, with contracts for unknown calls and concolic checks as refinement evidence.
+![System architecture overview](../../../assets/slop-feedback-loop/system-architecture-overview.png)
 
 
 ## The Compute Aided Verification kitchen sink
@@ -172,7 +168,7 @@ has its own appeal, we deliberately abandoned theoretical purity for practical e
 The kitchensink pipeline throws every applicable proof strategy at each bug candidate, in order of cost:
 
 ```
-STEP 5: BARRIER CERTIFICATE + DSE ANALYSIS
+STEP 5: BARRIER CERTIFICATE + DIRECTED SYMBOLIC EXECUTION ANALYSIS
 ```
 
 For each unguarded bug candidate, A3 tries a cascade of barriers:
@@ -188,7 +184,7 @@ For each unguarded bug candidate, A3 tries a cascade of barriers:
 9. **ValidatedParamsBarrier** — Parameter validation tag tracking
 10. **DSEConfirmationBarrier** — Z3-backed directed symbolic execution to construct concrete triggering inputs
 
-When no barrier proves safety, DSE constructs a *satisfying assignment* — a concrete input that triggers the crash.
+When no barrier proves safety, DSE (directed symbolic execution) constructs a *satisfying assignment* — a concrete input that triggers the crash.
 This is the strongest evidence: not just "we couldn't prove it safe," but "here's an input that breaks it."
 
 The concrete numbers on LLM2CLIP's training code illustrate the cascade:
@@ -437,17 +433,6 @@ By the time this became a pip package, the architecture had hardened into a simp
 
 ### Static-first stage
 
-The static stage does the heavy lifting:
-
-- discover candidate issues across many bug types,
-- run symbolic checks and path-sensitive reasoning,
-- apply barrier/invariant-style elimination,
-- deduplicate and score,
-- preserve evidence in SARIF.
-
-This is where most noise disappears.
-
-![Bug taxonomy coverage](../../../assets/slop-feedback-loop/bug-taxonomy-67-types.png)
 
 ### The kitchensink approach: steal the best ideas, orchestrate them, don't worship any single paper
 
@@ -487,19 +472,6 @@ Only the leftovers are sent to an LLM agent with tools to inspect real context:
 
 The key is not "LLM decides everything." The key is "LLM decides only where static proof and disproof both stop."
 
-## CI as a ratchet, not a firehose
-
-A practical design choice made this deployable in messy repos: baseline ratcheting.
-
-- Existing accepted findings are recorded.
-- New unaccepted findings fail CI.
-- Disappearing findings are auto-pruned.
-
-That shifts the team experience from "infinite backlog" to "no net new risk," which is the only sustainable adoption model for large existing codebases.
-
-![Case study: DeepSpeed](../../../assets/slop-feedback-loop/deepspeed-case-study.png)
-
-![Real bugs found example](../../../assets/slop-feedback-loop/deepspeed-real-bugs.png)
 
 ## Why this architecture specifically fights slop
 
