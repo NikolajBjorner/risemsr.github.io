@@ -134,7 +134,7 @@ to present results as its own inventions, we could send the 85 page document to 
 20 years ago for cyber physical systems [PennSUPaper] and perhaps a thread of approaches used for synthesizing invariants from Farkas lemma [GulwaniVenkie].
 
 
-## From Math to Code
+## From Foundational Math to Code
 
 
 The eloquently looking mathematical documents provide a great compass for agents to plan implementations. We still need an implementation plan.
@@ -142,7 +142,7 @@ We asked Copilot to synthesize a script to call Copilot in a loop, bootstrapping
 
 
 > Combine model-checker-plan with a desire to create a continuous copilot-cli workflow, by in a scheduled and structured way calling f"copilot -p '{prompt}' --allow-all-tools", with different prompts depending on where you are in the process.  First flesh out the plan for the continual process, then write it as a .py using that call_copilot script.   Note that unless told otherwise, copilot's cli will create files itself, not return text of files.
-> Note that part of the loop *has* to be downloading a large collection of rust repos, and iteratively debugging for false negatives by having an LLM come up with a hard-to-spot bug of type n and having the model detect it, and debugging for all false positives by running the checker on all rut files in the entire set of repos, seeing where it finds a positive, and asking copilot-cli if it agrees that it's a positive.   Then it should iterate on its results, using barrier certificate theory where it can be helpful, and developing in other ways as well.  The first part, though, should be developing a list of "moving parts" necessary, and iteratively building and then testing each moving part.  Note that the implementation should be in python.
+> Note that part of the loop *has* to be downloading a large collection of python repos, and iteratively debugging for false negatives by having an LLM come up with a hard-to-spot bug of type n and having the model detect it, and debugging for all false positives by running the checker on all rut files in the entire set of repos, seeing where it finds a positive, and asking copilot-cli if it agrees that it's a positive.   Then it should iterate on its results, using barrier certificate theory where it can be helpful, and developing in other ways as well.  The first part, though, should be developing a list of "moving parts" necessary, and iteratively building and then testing each moving part.  Note that the implementation should be in python.
 > This should consist of a .py python file which enacts this workflow.
 `
 
@@ -161,15 +161,17 @@ More about oracles later.
 ![System architecture overview](../../../assets/slop-feedback-loop/system-architecture-overview.png)
 
 
-## The Compute Aided Verification kitchen sink
+## The Computer Aided Verification kitchen sink
 
 While a novel-looking foundation and an AI model's ability to create end-to-end systems based on one approach
 has its own appeal, we deliberately abandoned theoretical purity for practical effectiveness.
-The kitchensink pipeline throws every applicable proof strategy at each bug candidate, in order of cost:
+The kitchen sink pipeline throws every applicable proof strategy at each bug candidate, in order of cost:
 
+<!---
 ```
 STEP 5: BARRIER CERTIFICATE + DIRECTED SYMBOLIC EXECUTION ANALYSIS
 ```
+--->
 
 For each unguarded bug candidate, A3 tries a cascade of barriers:
 
@@ -202,9 +204,36 @@ The concrete numbers on LLM2CLIP's training code illustrate the cascade:
 Of 55 potential bugs, 41 are eliminated by guard detection alone (they sit behind `if` checks, `try/except`, or assertions).
 Of the remaining 14, barrier certificates prove 8 more safe.
 Of the remaining 6, DSE confirms 5 are *reachable* with concrete inputs — real bugs.
-That is the kitchensink point: treat great papers as interoperable components in a verification control loop, not as mutually exclusive camps.
+That is the kitchen sink point: treat great papers as interoperable components in a verification control loop, not as mutually exclusive camps.
 
-## Library Specialization — PyTorch
+The kitchen sink approach itself is prompted with a selection of highlights from the past 30 years of Computer Aided Verification.
+While our starting point was a specific technique honed in the theory of [Positivstellensatz certificates](https://www.jstor.org/stable/24897130),
+with [accompanying toolsets](https://www.mit.edu/~parrilo/sostools/)
+and used for [Cyber physical systems](https://web.mit.edu/~jadbabai/www/papers/hscc04_2.pdf)
+we pivoted and asked copilot to examine relevant CAV literature, and it identified a smorgasbord of classics and wrote custom z3 verifiers in a3-python:
+
+- [Property-directed](https://theory.stanford.edu/~arbrad/papers/IC3.pdf), [CHC-style](https://theory.stanford.edu/~arbrad/papers/IC3.pdf) reachability engines and
+[interpolation](https://people.eecs.berkeley.edu/~alanmi/courses/2007_290N/papers/inter_mcmillan_cav03.pdf).
+- Abstraction-refinement families (classic [CEGAR](https://www.cs.cmu.edu/~emc/papers/Papers%20In%20Refereed%20Journals/Counterexample-guided%20abstraction%20refinement.pdf),
+  [SAT predicate abstraction](http://www.kroening.com/papers/fmsd2004.pdf),
+  [lazy interpolation-based abstraction](https://people.eecs.berkeley.edu/~alanmi/courses/2007_290N/papers/inter_mcmillan_cav06.pdf)
+- Learning/synthesis families ([ICE](http://pranav-garg.com/papers/cav14.pdf),
+                               [Houdini](https://link.springer.com/chapter/10.1007/3-540-45251-6_29),
+			       [SyGuS](https://ieeexplore.ieee.org/document/6679385)) that propose and refine invariants,			       
+- [Compositional assume-guarantee reasoning for interprocedural scaling](https://ptolemy.berkeley.edu/projects/embedded/Alumni/shaz/ag.html)
+
+
+![Layer feedback architecture](../../../assets/slop-feedback-loop/layer-feedback-architecture.png)
+
+
+## Concolic and Axiomatic Oracles
+
+A big idea that makes dynamic symbolic execution workable with system calls or other function calls that
+are not practical to reason about symbolically is to _just execute_ the code with concrete values.
+A dual idea is to axiomatize the effect of library calls and have symbolic execution use the axioms to pretend it executed
+the code of the library call. We asked copilot to specialize a3-python for both options. To axiomatize library calls, we
+used theories encoded in LEAN's MathLib, and had copilot import them in a format that could be used by z3's symbolic execution
+formalism. __NSB: add some pointers to what we tried with LEAN/MathLib. Is this in the current shipping version of a3-python? If not we can still describe experience, though this is one of the big ideas of Halley that could get clobbered into the stream.__ 
 
 Generic analysis on numeric libraries drowns in false positives — every `tensor / x` is a potential DIV_ZERO,
 every `tensor[i]` a potential BOUNDS error. Real optimizers guard these operations with `eps`-clamped denominators,
@@ -303,7 +332,7 @@ The highlights:
 
 - **LLM2CLIP `_approx_sq_grad` (DIV_ZERO)** — Silent NaN corruption from dividing by a zero-valued mean (detailed above).
 
-### Symbolo-neural
+### Symbolic-neural
 
 A3's architecture occupies a specific quadrant: **symbolic verifier + neural triage**.
 
@@ -324,30 +353,6 @@ and deployable in CI without rate limits or API costs for the vast majority of a
 
 ## The actual engine: AI theorizing -> coding -> testing -> fixing code -> fixing theory
 
-This loop was repeated enough times that it became the project's real method.
-
-### 1) AI theorizing
-
-AI was used to generate broad hypotheses fast:
-
-- new abstractions,
-- candidate proof templates,
-- odd cross-domain analogies,
-- aggressive architectural combinations.
-
-Most of these were not immediately trustworthy.
-
-### 2) Coding
-
-Ideas were encoded in analyzers:
-
-- bytecode/CFG extraction,
-- symbolic state propagation,
-- unsafe-region checks,
-- barrier template synthesis,
-- dynamic symbolic/concolic validation.
-
-![Symbolic execution and taint tracking](../../../assets/slop-feedback-loop/symbolic-execution-taint-tracking.png)
 
 ### 3) Testing
 
@@ -384,29 +389,6 @@ Then the loop restarted.
 
 This is "fighting AI slop with AI slop" in practice: generate aggressively, then subject everything to adversarial execution.
 
-## A short technical example: why the loop mattered
-
-Consider the bug claim "failing assertion escapes uncaught."
-
-At theory level, this is a reachability question into an unsafe region.
-
-At code level, it depends on details:
-
-- is the failing assert reachable,
-- are asserts enabled,
-- does an enclosing handler catch it,
-- does a caller catch it,
-- does a `finally` path alter propagation?
-
-A naive detector over-reports. A purely theorem-level account under-specifies runtime behavior. The loop forced both sides to meet in the middle: precise-enough execution semantics plus conservative proof rules.
-
-The same pattern repeated for unknown library calls:
-
-- fully deterministic assumptions were unsound,
-- fully nondeterministic assumptions were noisy,
-- contract-overapproximation + concolic witness checks gave a workable middle.
-
-![Symbolic vs concolic roles](../../../assets/slop-feedback-loop/symbolic-vs-concolic-roles.png)
    
 ## Back-in-time detective board: where did these ideas come from?
 
@@ -422,43 +404,13 @@ No single field would naturally propose this exact combination on day one.
 
 AI, however, is very good at proposing weird crossovers quickly. The quality filter is not the novelty of the crossover. The quality filter is whether it survives tests.
 
-## What shipped: a static-first, agentic-second package
-
-By the time this became a pip package, the architecture had hardened into a simple principle:
-
-- put deterministic, auditable, non-LLM reasoning first,
-- reserve LLM judgment for the residual uncertainty.
-
-![Layer feedback architecture](../../../assets/slop-feedback-loop/layer-feedback-architecture.png)
 
 ### Static-first stage
 
-
-### The kitchensink approach: steal the best ideas, orchestrate them, don't worship any single paper
-
-The static-first stage is not one technique. It's a paper portfolio.
-
-In this repo that portfolio is called `kitchensink`, and it is enabled by default in scanning mode (you can disable it with `--no-kitchensink` when you explicitly want a narrower run).
-
-The practical rule is simple:
-
-1. Classify the bug shape.
-2. Route to the strongest low-cost method first.
-3. Escalate only when proof/counterexample remains unresolved.
-4. Keep competing methods as cross-checks, not decorations.
-
-Concretely, that means combining and sequencing results from:
-
 - Barrier-certificate foundations for safety separation [1][2].
 - Algebraic proof machinery (Positivstellensatz, SOS/SDP, hierarchy lifting, sparsity, and DSOS/SDSOS speed layers) [3][4][5][6][7][18].
-- Property-directed and CHC-style reachability engines [8][9][10].
-- Abstraction-refinement families (classic CEGAR, SAT predicate abstraction, lazy interpolation-based abstraction) [11][12][13].
-- Learning/synthesis families (ICE, Houdini, SyGuS) that propose and refine invariants [14][15][16].
-- Compositional assume-guarantee reasoning for interprocedural scaling [17].
 
-That is the kitchensink point: treat great papers as interoperable components in a verification control loop, not as mutually exclusive camps.
-
-![Barrier synthesis advanced techniques](../../../assets/slop-feedback-loop/barrier-synthesis-advanced-techniques.png)
+That is the kitchen sink point: treat great papers as interoperable components in a verification control loop, not as mutually exclusive camps.
 
 ### Agentic-second stage
 
@@ -504,26 +456,3 @@ If you want this pattern outside this repo, keep the order:
 4. Keep a CI ratchet so quality only moves one way.
 
 Do those four things and "AI-assisted" starts to look less like hype and more like engineering.
-
-## References (kitchensink stack)
-
-1. S. Prajna, A. Jadbabaie, G. J. Pappas. "Safety verification of hybrid systems using barrier certificates." HSCC, 2004.
-2. S. Prajna, A. Jadbabaie, G. J. Pappas. "A framework for worst-case and stochastic safety verification using barrier certificates." IEEE Transactions on Automatic Control, 2007.
-3. M. Putinar. "Positive polynomials on compact semi-algebraic sets." Indiana University Mathematics Journal, 1993.
-4. P. A. Parrilo. "Semidefinite programming relaxations for semialgebraic problems." Mathematical Programming, Series B, 2003.
-5. J.-B. Lasserre. "Global optimization with polynomials and the problem of moments." SIAM Journal on Optimization, 2001.
-6. M. Kojima, S. Kim, H. Waki. "Sparsity in sums of squares of polynomials." Mathematical Programming, Series B, 2005.
-7. A. A. Ahmadi, A. Majumdar. "DSOS and SDSOS optimization: more tractable alternatives to sum of squares and semidefinite optimization." SIAM Journal on Applied Algebra and Geometry, 2019.
-8. A. R. Bradley. "SAT-Based Model Checking without Unrolling." VMCAI, 2011.
-9. A. Komuravelli, A. Gurfinkel, S. Chaki. "SMT-based model checking for recursive programs." CAV, 2014.
-10. K. L. McMillan. "Interpolation and SAT-Based Model Checking." CAV, 2003.
-11. E. Clarke, O. Grumberg, S. Jha, Y. Lu, H. Veith. "Counterexample-Guided Abstraction Refinement." CAV, 2000.
-12. E. Clarke, D. Kroening, N. Sharygina, K. Yorav. "Predicate Abstraction of ANSI-C Programs Using SAT." Formal Methods in System Design, 2004.
-13. K. L. McMillan. "Lazy Abstraction with Interpolants." CAV, 2006.
-14. P. Garg, C. Loeding, P. Madhusudan, D. Neider. "ICE: A Robust Framework for Learning Invariants." CAV, 2014.
-15. C. Flanagan, K. R. M. Leino. "Houdini, an Annotation Assistant for ESC/Java." FME, 2001.
-16. R. Alur, R. Bodik, G. Juniwal, M. M. K. Martin, M. Raghothaman, S. A. Seshia, R. Singh, A. Solar-Lezama, E. Torlak, A. Udupa. "Syntax-Guided Synthesis." FMCAD, 2013.
-17. T. A. Henzinger, S. Qadeer, S. K. Rajamani. "You Assume, We Guarantee: Methodology and Case Studies." CAV, 1998.
-18. S. Prajna, A. Papachristodoulou, P. A. Parrilo. "SOSTOOLS: Sum of squares optimization toolbox for MATLAB." 2002.
-
-**Deliverable last:** `a3-python` is the shipped pip package that does exactly this: automatic bug discovery, aggressive static false-positive filtering, and LLM final judgment on the much smaller uncertain set.
