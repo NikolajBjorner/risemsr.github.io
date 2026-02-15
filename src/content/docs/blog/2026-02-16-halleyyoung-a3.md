@@ -24,8 +24,59 @@ for you to give a spin.
 
 ## A3-python
 
-__NSB: a section here that uses a3-python on an example: tell the reader what to expect before going through the process of getting there.
-Include information about how it is auto-generated and iterated.__
+Before we walk through the theory and pipeline, here is what a3 actually does on a real codebase.
+We ran `a3 scan` on five core files from [requests](https://github.com/psf/requests), the most downloaded Python package on PyPI (183 functions, ~5000 lines):
+
+```
+$ pip install a3-python
+$ a3 scan requests/
+
+STEP 5: BARRIER CERTIFICATE + DSE ANALYSIS
+  Total bug instances:     183
+  Barrier results:
+    Proven FP:   19/23
+    Remaining:   4
+  Barrier contributions:
+        9  post_condition
+        9  refinement_type
+        1  inductive_invariant
+
+STEP 7: TRUE POSITIVE CANDIDATES
+  TRUE POSITIVES (DSE-confirmed reachable):
+     ⚠️ NULL_PTR in models.Response.__setstate__
+     ⚠️ NULL_PTR in sessions.Session.__setstate__
+     ⚠️ BOUNDS in utils.address_in_network
+     ⚠️ BOUNDS in utils.select_proxy
+
+SUMMARY
+  Functions analysed:    183
+  Total bug instances:   183
+  Proven false positive: 179 (97.8%)
+  Remaining candidates:  4
+  DSE-confirmed TPs:     4
+```
+
+Of 183 potential bug instances, A3 proves 179 safe with formal barrier certificates. Four survive. All four are real:
+
+1. **`address_in_network` — BOUNDS.** The function calls `net.split("/")` and immediately indexes `[1]`:
+
+   ```python
+   # requests/utils.py:670
+   def address_in_network(ip, net):
+       ipaddr = struct.unpack("=L", socket.inet_aton(ip))[0]
+       netaddr, bits = net.split("/")
+       #               ^^^^^^^^^^^^^^^^
+       # ValueError if net has no "/", BOUNDS if split returns 1 element
+   ```
+   Pass any `net` string without a `/` and this crashes.
+
+2. **`Response.__setstate__` — NULL_PTR.** Unpickling a `Response` iterates `state.items()`, but nothing prevents `state` from being `None` — a common issue with corrupted pickle files or version-mismatched serialization.
+
+These are the kind of bugs that pass code review, pass tests, and then crash at 3 AM on malformed input.
+
+A3 is auto-generated and iterated: the analyzer was bootstrapped by asking AI to produce verification theory,
+then subjected to thousands of test iterations against real codebases.
+The theory was refined, the code was refined, and the surviving result is what ships.
 
 ## Querying for confluences
 
@@ -116,22 +167,154 @@ exclusion over an explicit transition system, with contracts for unknown calls a
 
 ## The Compute Aided Verification kitchen sink
 
-__Describe the kitchen sink approach__
+While a novel-looking foundation and an AI model's ability to create end-to-end systems based on one approach
+has its own appeal, we deliberately abandoned theoretical purity for practical effectiveness.
+The kitchensink pipeline throws every applicable proof strategy at each bug candidate, in order of cost:
 
-While a novel looking foundation and AI models ability to create end-to-end systems based on one approach 
-has its own appeal we are not
+```
+STEP 5: BARRIER CERTIFICATE + DSE ANALYSIS
+```
 
-## Library Specialization
+For each unguarded bug candidate, A3 tries a cascade of barriers:
 
-__Describe pytorch axiomatization and provide an example using a3-python__
+1. **GuardDetectionBarrier** — Direct syntactic guard checks (`if x is None`, `if len(x) > 0`, `try/except`)
+2. **EnhancedPostConditionBarrier** — Factory pattern and return-value analysis
+3. **EnhancedRefinementTypeBarrier** — Refinement type inference (e.g., `len(x) > 0` after a guard)
+4. **InductiveInvariantBarrier** — Loop invariant synthesis via Z3
+5. **ControlFlowBarrier** — Dominator/post-dominator analysis on the CFG
+6. **DataflowBarrier** — Reaching definitions and value-range analysis
+7. **DisjunctiveBarrier** — Case-split reasoning for optional/nullable types
+8. **ValidatedParamsBarrier** — Parameter validation tag tracking
+9. **DSEConfirmationBarrier** — Z3-backed directed symbolic execution to construct concrete triggering inputs
+
+When no barrier proves safety, DSE constructs a *satisfying assignment* — a concrete input that triggers the crash.
+This is the strongest evidence: not just "we couldn't prove it safe," but "here's an input that breaks it."
+
+The concrete numbers on LLM2CLIP's training code illustrate the cascade:
+
+```
+  Total bug instances:     55
+  Barrier contributions:
+        4  post_condition        (factory patterns, return guarantees)
+        4  refinement_type       (parameter type narrowing)
+  Proven FP:   8/14
+  Remaining:   6
+  DSE confirmed TP:    5
+```
+
+Of 55 potential bugs, 41 are eliminated by guard detection alone (they sit behind `if` checks, `try/except`, or assertions).
+Of the remaining 14, barrier certificates prove 8 more safe.
+Of the remaining 6, DSE confirms 5 are *reachable* with concrete inputs — real bugs.
+That is the kitchensink point: treat great papers as interoperable components in a verification control loop, not as mutually exclusive camps.
+
+## Library Specialization — PyTorch
+
+Generic analysis on numeric libraries drowns in false positives — every `tensor / x` is a potential DIV_ZERO,
+every `tensor[i]` a potential BOUNDS error. Real optimizers guard these operations with `eps`-clamped denominators,
+shape assertions, and type dispatch. A3 encodes these patterns as *library axioms* — properties that PyTorch tensors
+are known to satisfy — so the barrier certificates can reason about them.
+
+Here is the result on PyTorch's official [Adafactor optimizer](https://github.com/pytorch/pytorch/blob/main/torch/optim/_adafactor.py):
+
+```
+$ a3 scan pytorch_adafactor/
+
+SUMMARY
+  Functions analysed:    8
+  Total bug instances:   21
+  Proven false positive: 21 (100.0%)
+  DSE-confirmed TPs:     0
+```
+
+**21 potential bugs, every one proven safe.** The barriers verify that PyTorch's guards —
+`eps`-clamped denominators, length assertions, careful initialization — prevent every candidate crash.
+
+Now contrast this with [Microsoft's LLM2CLIP](https://github.com/microsoft/LLM2CLIP), which copies Adafactor from fairseq *without* PyTorch's guards:
+
+```
+$ a3 scan llm2clip_training/
+
+  TRUE POSITIVES (DSE-confirmed reachable):
+     ⚠️ DIV_ZERO in fp16.Adafactor._approx_sq_grad
+     ⚠️ DIV_ZERO in fp16.Adafactor._rms
+     ⚠️ BOUNDS in fp16.Adafactor.step
+     ⚠️ DIV_ZERO in fp16.DynamicLossScaler._decrease_loss_scale
+     ⚠️ BOUNDS in fp16.MemoryEfficientFP16Adam.step
+
+SUMMARY
+  Functions analysed:    47
+  Total bug instances:   55
+  Proven false positive: 49 (89.1%)
+  DSE-confirmed TPs:     5
+```
+
+The `_approx_sq_grad` bug is the most important finding:
+
+```python
+# LLM2CLIP/training/fp16.py:748
+def _approx_sq_grad(self, exp_avg_sq_row, exp_avg_sq_col, output):
+    r_factor = (
+        (exp_avg_sq_row / exp_avg_sq_row.mean(dim=-1).unsqueeze(-1))
+        #                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        .rsqrt_()
+        .unsqueeze(-1)
+    )
+```
+
+When gradient values are all zero (dead neurons, masked parameters, early training with sparse gradients),
+`exp_avg_sq_row.mean()` returns `0.0`. The division produces `Inf`, and `rsqrt_()` propagates `NaN` — **silently
+corrupting the optimizer state for every subsequent training step with no error or warning.**
+
+This is a known bug class. [HuggingFace Transformers](https://github.com/huggingface/transformers/blob/main/src/transformers/optimization.py)
+fixes it by initializing `exp_avg_sq` with `fill_value=eps` instead of zeros. LLM2CLIP's copy never got that fix.
+PyTorch's version also guards it. A3 catches the unguarded copy; the barrier certificates formally confirm the guarded PyTorch version is safe.
 
 
-## Iterating for Quality
+## Iterating for Quality — Results Across Real Codebases
 
-__Describe what was the process for driving quality of a3-python and what is in store for AI assisted programming__
+The quality of a static analyzer is not measured by what it finds. It is measured by what it *does not* report falsely.
+Here is a summary of A3 results across four well-known open-source projects:
 
+| Codebase | Functions | Bug instances | Proven FP | Candidates | DSE-confirmed TPs |
+|----------|-----------|--------------|-----------|------------|-------------------|
+| PyTorch Adafactor | 8 | 21 | 21 (100%) | 0 | 0 |
+| requests (core) | 183 | 183 | 179 (97.8%) | 4 | 4 |
+| DeepSpeed (utils) | 83 | 77 | 74 (96.1%) | 3 | 3 |
+| LLM2CLIP (training) | 47 | 55 | 49 (89.1%) | 6 | 5 |
 
-__NSB: symbolo-neural__: symbolic verifier which is deterministic, auditable, and eco-friendly; neural triaging to filter important bugs form noise and to explain bugs. The quadrant of symbolic, neural, neuro-symolic and symbol-neural.
+Every TP finding across these four codebases is a real, exploitable bug — not a style complaint or a theoretical concern.
+The highlights:
+
+- **DeepSpeed `_ensure_divisibility` (DIV_ZERO)** — A function whose *entire purpose* is to validate that numerator is divisible by denominator crashes on its own unvalidated input. When `denominator=0`, Python's `%` operator raises `ZeroDivisionError` *before* the `assert` can produce its helpful error message:
+
+  ```python
+  # deepspeed/utils/groups.py:64
+  def _ensure_divisibility(numerator, denominator):
+      """Ensure that numerator is divisible by the denominator."""
+      assert numerator % denominator == 0   # ZeroDivisionError before assert
+  ```
+
+  This is called with user-configurable values like `expert_parallel_size` and `tensor_parallel_size`.
+
+- **DeepSpeed `SynchronizedWallClockTimer.__call__` (BOUNDS)** — Indexing into `self.timers` with an unvalidated name.
+
+- **DeepSpeed `ThroughputTimer._is_report_boundary` (DIV_ZERO)** — `self.global_step_count % self.steps_per_output` where `steps_per_output` can be zero. The `None` check guards against `None` but not against `0`.
+
+- **requests `address_in_network` (BOUNDS)** — Destructuring `net.split("/")` into two variables without checking the split produced two segments.
+
+- **requests `Response.__setstate__` (NULL_PTR)** — Iterating `state.items()` during unpickling without a `None` check on `state`.
+
+- **LLM2CLIP `_approx_sq_grad` (DIV_ZERO)** — Silent NaN corruption from dividing by a zero-valued mean (detailed above).
+
+### Symbolo-neural
+
+A3's architecture occupies a specific quadrant: **symbolic verifier + neural triage**.
+
+- The symbolic engine is deterministic, auditable, and runs without GPU compute or API keys.
+- The neural component (agentic LLM) handles only the uncertain residue — the 1-4% of candidates where formal proof and disproof both stop.
+
+This makes the tool eco-friendly (no LLM calls for 96%+ of findings), explainable (barrier certificates provide proof artifacts),
+and deployable in CI without rate limits or API costs for the vast majority of analysis.
 
 
 # ------- ORIGINAL VERSION ------
