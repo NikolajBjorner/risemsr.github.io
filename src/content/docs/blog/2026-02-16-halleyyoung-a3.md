@@ -19,7 +19,7 @@ What if you asked your favorite AI agent:
 This is how our journey creating the __a3__ framework, a system for generating Advanced Automated Analysis engines.
 So far we extracted proof-of-concept static verifiers for Rust and Python. In the process of creating a3-python we used AI to (re)discover a
 foundation based on Hilbert's Stellensatz theorems, integrate a top dozen advances in symbolic model checking, 
-and import mathematical libraries for reasoning about PyTorch code. **NSB: revisit to make sure the right elements are summarized**
+and import mathematical libraries for reasoning about PyTorch code.
 The a3-python system is now [available](https://pypi.org/project/a3-python)
 for you to give a spin.
 
@@ -238,8 +238,9 @@ A big idea that makes dynamic symbolic execution workable with system calls or o
 are not practical to reason about symbolically is to _just execute_ the code with concrete values.
 A dual idea is to axiomatize the effect of library calls and have symbolic execution use the axioms to pretend it executed
 the code of the library call. We asked copilot to specialize a3-python for both options. To axiomatize library calls, we
-used theories encoded in LEAN's MathLib, and had copilot import them in a format that could be used by z3's symbolic execution
-formalism. __NSB: add some pointers to what we tried with LEAN/MathLib. Is this in the current shipping version of a3-python? If not we can still describe experience, though this is one of the big ideas of Halley that could get clobbered into the stream.__ 
+used theories encoded in L&exist;&forall;N's (created by the genius of Leonardo de Moura who also co-authored z3, Yices1, and SAL2),
+[MathLib](__TODO: Add reference__),
+and had copilot import them in a format that could be used by z3's symbolic execution formalism. 
 
 Generic analysis on numeric libraries drowns in false positives — every `tensor / x` is a potential DIV_ZERO,
 every `tensor[i]` a potential BOUNDS error. Real optimizers guard these operations with `eps`-clamped denominators,
@@ -340,7 +341,7 @@ The highlights:
 
 - **LLM2CLIP `_approx_sq_grad` (DIV_ZERO)** — Silent NaN corruption from dividing by a zero-valued mean (detailed above).
 
-### Symbolic-neural
+### Symbolic-Neural
 
 A3's architecture occupies a specific quadrant: **symbolic verifier + neural triage**.
 
