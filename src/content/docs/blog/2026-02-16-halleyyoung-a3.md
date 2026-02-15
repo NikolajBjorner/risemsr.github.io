@@ -351,7 +351,7 @@ A3's architecture occupies a specific quadrant: **symbolic verifier + neural tri
 This makes the tool eco-friendly (no LLM calls for 96%+ of findings), explainable (barrier certificates provide proof artifacts),
 and deployable in CI without rate limits or API costs for the vast majority of analysis.
 
-When discussing the a3 project with colleagues, the first question that comes to mind is _how do you trust the verifier_?
+When discussing the a3 project with colleagues, the first question that comes to mind is often _how do you trust the verifier_?
 Indeed, we observed how the model under Copilot CLI could barter and cheat, producing just enough code to pass unit tests, but not enough
 to be resilient. Our proof-of-concept undeniably contains shortcuts that would not pass a quality code review. But, we have
 harnessed a3-python by _fighting AI slop with AI slop_: agressively generate code, then subject evertyhing to adverserial testing.
@@ -375,4 +375,11 @@ So yes, this is _AI slop vs AI slop,_ but not symmetrically.
 - Downstream agentic AI handles the hard residue.
 
 That asymmetry is what makes it useful.
+
+The ease to mix and match programming languages, symbolic backends, to import axioms, and integrate neural verdicts,
+suggests a new era for program verification: create custom verification engines that target domain specific needs,
+whether specific languages or integration with libraries. A practical difficulty with maintaining large systems that
+invoke prorietary protocols is that developers who understand coding may be disjoint from subject matter experts in
+library behavior and disjoint from architects. The potential for a3 goes beyond finding common classes of Python coding errors,
+but to bring deep understanding of intent to static verification.
 
