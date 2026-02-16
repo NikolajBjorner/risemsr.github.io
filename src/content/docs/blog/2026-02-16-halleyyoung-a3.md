@@ -308,7 +308,6 @@ PyTorch's version also guards it. A3 catches the unguarded copy; the barrier cer
 
 ## Iterating for Quality — Results Across Real Codebases
 
-__NSB: we should have git-hashes for [DeepSpeed](https://github.com/deepspeedai/DeepSpeed/issues/7838) and LLM2CLIP so reported bugs can be retrieved even if code bases change__
 
 The quality of a static analyzer is not best measured by what it finds. It is measured by what it *does not* report falsely.
 The noise level of static analyzers, and for that matter fuzz testers, have a long and tortured history of irritating developers with
@@ -358,8 +357,9 @@ and deployable in CI without rate limits or API costs for the vast majority of a
 
 When discussing the a3 project with colleagues, the first question that comes to mind is often _how do you trust the verifier_?
 Indeed, we observed how the model under Copilot CLI could barter and cheat, producing just enough code to pass unit tests, but not enough
-to be resilient. Our proof-of-concept undeniably contains shortcuts that would not pass a quality code review. But, we have
-harnessed a3-python by _fighting AI slop with AI slop_: agressively generate code, then subject evertyhing to adverserial testing.
+to be resilient. Our prototype undeniably contains shortcuts that would not pass a quality code review. But, we have
+harnessed a3-python by taking the approach of translation validation: verify the output of the verifier;
+and _fighting AI slop with AI slop_: agressively generate code, then subject evertyhing to adverserial testing.
 
 
 It fights slop at three levels:
