@@ -22,9 +22,7 @@ verifier for Python, a language that is widely used, targets of AI coding agents
 but not well-supported by the program verification toolbox.
 
 For decades, researchers have developed verification tools while grappling with a fundamental challenge: scaling verification to mainstream languages. 
-The difficulty stems both from the complexity of rich type systems and semantics, and from the need to continuously evolve verification tools in lockstep with rapidly changing language features.  
-At the same time, LLM‑based code synthesis—while mind-numbingly effective—is not grounded in unambiguous semantics and cannot serve as a reliable source of truth. 
-Yet the combination of mind-numbing agent‑driven code synthesis and increasingly powerful verification infrastructure creates a new opportunity: to build tools that are semantically grounded and applicable in domains where no mortal would reasonably hand‑craft a verifier.
+The difficulty stems both from the complexity of rich type systems and semantics, and from the need to continuously evolve verification tools in lockstep with rapidly changing language features. At the same time, LLM‑based code synthesis—while mind-numbingly effective—is not grounded in unambiguous semantics and cannot serve as a reliable source of truth. Yet the combination of mind-numbing agent‑driven code synthesis and increasingly powerful verification infrastructure creates a new opportunity: to build tools that are semantically grounded and applicable in domains where no mortal would reasonably hand‑craft a verifier.
 
 In the process of creating a3-python we used AI to (re)discover a
 foundation based on Hilbert's Stellensatz theorems, integrate a top dozen advances in symbolic model checking, 
