@@ -16,7 +16,7 @@ What if you asked your favorite AI agent:
 > foundation-shaking work but directed toward something the legendary Nikolaj Bj&oslash;rner 
 > (co-creator of Z3) could actually use?
 
-It waa the start of our journey creating the __a3__ framework for generating Advanced Automated Analysis engines.
+It was the start of our journey creating the __a3__ framework for generating Advanced Automated Analysis engines.
 We used the framework to create the [a3-python](https://pypi.org/project/a3-python)
 verifier for Python, a language that is widely used, targets of AI coding agents,
 but not well-supported with the program verification toolbox.
@@ -345,7 +345,7 @@ The highlights:
 
 - **LLM2CLIP `_approx_sq_grad` (DIV_ZERO)** — Silent NaN corruption from dividing by a zero-valued mean (detailed above).
 
-### Symbolic-Neural
+## Symbolic-Neural
 
 A3's architecture occupies a specific quadrant: **symbolic verifier + neural triage**.
 
