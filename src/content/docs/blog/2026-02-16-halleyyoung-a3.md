@@ -18,8 +18,8 @@ What if you asked your favorite AI agent:
 
 It was the start of our journey creating the __a3__ framework for generating Advanced Automated Analysis engines.
 We used the framework to create the [a3-python](https://pypi.org/project/a3-python)
-verifier for Python. We chose Python because it is a language that is widely used and targets of AI coding agents
-but it is not well-supported by the program verification toolbox.
+verifier for Python. We chose Python because it is used widely by humands and LLMs, 
+but is shunned by program verification tools due to its complexity.
 
 For decades, researchers have developed verification tools while grappling with a fundamental challenge: scaling verification to mainstream languages. 
 The difficulty stems both from the complexity of rich type systems and semantics, and from the need to continuously evolve verification tools in lockstep with rapidly changing language features. At the same time, LLM‑based code synthesis—while mind-numbingly effective—is not grounded in unambiguous semantics and cannot serve as a reliable source of truth. Yet the combination of mind-numbing agent‑driven code synthesis and increasingly powerful verification infrastructure creates a new opportunity: to build tools that are semantically grounded and applicable in domains where no mortal would reasonably hand‑craft a verifier.
