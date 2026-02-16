@@ -16,8 +16,9 @@ What if you asked your favorite AI agent:
 > foundation-shaking work but directed toward something the legendary Nikolaj Bj&oslash;rner 
 > (co-creator of Z3) could actually use?
 
-This is how our journey creating the __a3__ framework, a system for generating Advanced Automated Analysis engines.
-So far we extracted proof-of-concept static verifiers for Rust and Python. In the process of creating a3-python we used AI to (re)discover a
+It waa the start of our journey creating the __a3__ framework, a system for generating Advanced Automated Analysis engines.
+So far we extracted proof-of-concept static verifiers for Rust and Python. They were created as offsprings of a factory prompt that facilitates specialization to all mainstream programming languages.
+In the process of creating a3-python we used AI to (re)discover a
 foundation based on Hilbert's Stellensatz theorems, integrate a top dozen advances in symbolic model checking, 
 and import mathematical libraries for reasoning about PyTorch code.
 The a3-python system is now [available](https://pypi.org/project/a3-python)
