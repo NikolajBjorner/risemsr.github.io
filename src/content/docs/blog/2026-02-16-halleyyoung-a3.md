@@ -239,8 +239,8 @@ A big idea that makes dynamic symbolic execution workable with system calls or o
 are not practical to reason about symbolically is to _just execute_ the code with concrete values.
 A dual idea is to axiomatize the effect of library calls and have symbolic execution use the axioms to pretend it executed
 the code of the library call. We asked copilot to specialize a3-python for both options. To axiomatize library calls, we
-used theories encoded in L&exist;&forall;N's (created by the genius of Leonardo de Moura who also co-authored z3, Yices1, and SAL2),
-[MathLib](__TODO: Add reference__),
+used theories encoded in L&exist;&forall;N's,
+[MathLib4](https://github.com/leanprover-community/mathlib4),
 and had copilot import them in a format that could be used by z3's symbolic execution formalism. 
 
 Generic analysis on numeric libraries drowns in false positives — every `tensor / x` is a potential DIV_ZERO,
