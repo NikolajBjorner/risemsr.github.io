@@ -16,12 +16,14 @@ What if you asked your favorite AI agent:
 > foundation-shaking work but directed toward something the legendary Nikolaj Bj&oslash;rner 
 > (co-creator of Z3) could actually use?
 
-It waa the start of our journey creating the __a3__ framework, a system for generating Advanced Automated Analysis engines.
-So far we extracted proof-of-concept static verifiers for Rust and Python. They were created as offsprings of a factory prompt that facilitates specialization to all mainstream programming languages.
+It waa the start of our journey creating the __a3__ framework for generating Advanced Automated Analysis engines.
+We used the framework to create the [a3-python](https://pypi.org/project/a3-python)
+verifier for Python, a language that is widely used, targets of AI coding agents,
+but not well-supported with the program verification toolbox.
 In the process of creating a3-python we used AI to (re)discover a
 foundation based on Hilbert's Stellensatz theorems, integrate a top dozen advances in symbolic model checking, 
 and import mathematical libraries for reasoning about PyTorch code.
-The a3-python system is now [available](https://pypi.org/project/a3-python)
+The a3-python system is now available
 for you to give a spin.
 
 ## A3-python
@@ -318,7 +320,7 @@ Here is a summary of A3 results across four well-known open-source projects:
 | PyTorch Adafactor | 8 | 21 | 21 (100%) | 0 | 0 |
 | requests (core) | 183 | 183 | 179 (97.8%) | 4 | 4 |
 | [DeepSpeed](https://github.com/deepspeedai/DeepSpeed/issues/7838) (utils) | 83 | 77 | 74 (96.1%) | 3 | 3 |
-| LLM2CLIP (training) | 47 | 55 | 49 (89.1%) | 6 | 5 |
+| [LLM2CLIP](https://github.com/microsoft/LLM2CLIP/issues/64) (training) | 47 | 55 | 49 (89.1%) | 6 | 5 |
 
 Every TP (true positive) finding across these four codebases is a real, exploitable bug — not a style complaint or a theoretical concern.
 The highlights:
@@ -381,7 +383,10 @@ That asymmetry is what makes it useful.
 
 The ease to mix and match programming languages, symbolic backends, to import axioms, and integrate neural verdicts,
 suggests a new era for program verification: create custom verification engines that target domain specific needs,
-whether specific languages or integration with libraries. A practical difficulty with maintaining large systems that
+whether specific languages or integration with libraries.
+So far we extracted prototypes static verifiers for Python and Rust.
+They were created as offsprings of a factory prompt that facilitates specialization to all mainstream programming languages.
+A practical difficulty with maintaining large systems that
 invoke prorietary protocols is that developers who understand coding may be disjoint from subject matter experts in
 library behavior and disjoint from architects. The potential for a3 goes beyond finding common classes of Python coding errors,
 but to bring deep understanding of intent to static verification.
